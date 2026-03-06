@@ -5,14 +5,16 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ActivityIndicator,
   View,
 } from "react-native";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { theme } from "../../../styles/theme";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
+import * as storage from "@/lib/storage";
 
 // Define a Zod schema for the profile data
 const profileSchema = z.object({
@@ -40,9 +42,15 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 const profile = () => {
+  const [isLoading, setIsLoading] = useState(true); // tracks loading state while we load saved data
+  const [isEditing, setIsEditing] = useState(false); // tracks if we are in edit mode or not
+  const [hasSavedData, setHasSavedData] = useState(false); // track if we have any saved data in the local storage
+
   const {
     control,
     handleSubmit,
+    reset, // add reset function to reset form values when canceling edits
+    watch, // add watch function to track form values, which will help us keeping the save button disabled/enbabled
     formState: { errors, isValid },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -56,12 +64,100 @@ const profile = () => {
     mode: "onSubmit",
   });
 
-  const onSubmit = (data: ProfileForm) => {
-    Alert.alert("Profile Saved", "Your profile has been updated", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+  const watchedValues = watch();
+  // it retuns an array of all form field values, and also we need to check that every values has length > 0
+  // ["Jane", "Smith", "", "A12345678", "4034034032"] => it will returns false
+
+  const isFormFilled = Object.values(watchedValues).every((v) => v.length > 0);
+
+  // Load saved profile data on Mount
+
+  useEffect(() => {
+    const loadingProfile = async () => {
+      const saved = await storage.get<ProfileForm>(storage.STORAGE_KEY.PROFILE);
+      // if save is not null or it has data, pre fill the view mode with the user data
+      if (saved !== null) {
+        reset(saved);
+        setHasSavedData(true);
+      } else {
+        setIsEditing(true); // first visit -- stare in edit mode
+      }
+      setIsLoading(false);
+    };
+    loadingProfile();
+  }, []);
+
+  const onSubmit = async (data: ProfileForm) => {
+    await storage.set(storage.STORAGE_KEY.PROFILE, data);
+    setHasSavedData(true);
+    setIsEditing(false); // switch to view mode after this
+  };
+  const handleCancel = async () => {
+    const saved = await storage.get<ProfileForm>(storage.STORAGE_KEY.PROFILE);
+    if (saved !== null) {
+      reset(saved);
+    }
+    setIsEditing(false);
   };
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.color.primary} />
+      </View>
+    );
+  }
+  // View mode
+  if (!isEditing) {
+    const values = watch();
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <Text style={styles.h1}>My Profile</Text>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>First Name</Text>
+            <Text style={styles.profileValue}>{values.firstName}</Text>
+          </View>
+          <View style={styles.divider} />
+        </View>
+
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Last Name</Text>
+            <Text style={styles.profileValue}>{values.lastName}</Text>
+          </View>
+          <View style={styles.divider} />
+        </View>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Email</Text>
+            <Text style={styles.profileValue}>{values.email}</Text>
+          </View>
+          <View style={styles.divider} />
+        </View>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Student ID</Text>
+            <Text style={styles.profileValue}>{values.studentId}</Text>
+          </View>
+          <View style={styles.divider} />
+        </View>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileLabel}>Phone Number</Text>
+            <Text style={styles.profileValue}>{values.phone}</Text>
+          </View>
+          <View style={styles.divider} />
+        </View>
+        <Pressable style={styles.button} onPress={() => setIsEditing(true)}>
+          <Text style={styles.buttonText}> Edit Profile</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>Edit Profile</Text>
@@ -139,9 +235,7 @@ const profile = () => {
           />
         )}
       />
-      {errors.phone && (
-        <Text style={styles.error}>{errors.phone.message}</Text>
-      )}
+      {errors.phone && <Text style={styles.error}>{errors.phone.message}</Text>}
 
       {/* Student ID */}
       <Text style={styles.label}>Student ID</Text>
@@ -163,10 +257,28 @@ const profile = () => {
       {errors.studentId && (
         <Text style={styles.error}>{errors.studentId.message}</Text>
       )}
-
-      <Pressable style={styles.button} onPress={handleSubmit(onSubmit)}>
-        <Text style={styles.buttonText}>Save Profile</Text>
-      </Pressable>
+      {/* Buttons for Edit Mode */}
+      {hasSavedData ? (
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.cancelButton} onPress={handleCancel}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.saveButton, !isFormFilled && styles.buttonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+          >
+            <Text style={styles.buttonText}> Save Profile</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          style={[styles.button, !isFormFilled && styles.buttonDisabled]}
+          onPress={handleSubmit(onSubmit)}
+          disabled={!isFormFilled}
+        >
+          <Text style={styles.buttonText}>Save Profile</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 };
@@ -176,6 +288,12 @@ export default profile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.color.bg,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: theme.color.bg,
   },
   content: {
@@ -216,11 +334,67 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.input,
     padding: 16,
     alignItems: "center",
-    marginTop: 28
+    marginTop: 28,
   },
   buttonText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "700"
-  }
+    fontWeight: "700",
+  },
+  // View Mode Styles
+  profileCard: {
+    backgroundColor: theme.color.card,
+    borderRadius: theme.radius.card,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    overflow: "hidden",
+  },
+  profileRow: {
+    padding: 16,
+  },
+  profileLabel: {
+    fontSize: 13,
+    color: theme.color.mute,
+    marginBottom: 4,
+  },
+  profileValue: {
+    fontSize: 16,
+    color: theme.color.text,
+    fontWeight: "500",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.color.border,
+  },
+
+  // Buttons Styles
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 28,
+  },
+  cancelButton: {
+    flex: 1,
+    borderRadius: theme.radius.input,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    backgroundColor: theme.color.card,
+  },
+  cancelButtonText: {
+    color: theme.color.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: theme.color.primary,
+    borderRadius: theme.radius.input,
+    padding: 16,
+    alignItems: "center",
+  },
 });
