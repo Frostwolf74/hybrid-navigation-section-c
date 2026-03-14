@@ -1,20 +1,18 @@
+import * as storage from "@/lib/storage";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
-  Alert,
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  ActivityIndicator,
-  View,
+  View
 } from "react-native";
 import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { theme } from "../../../styles/theme";
-import React, { useEffect, useState } from "react";
-import { router } from "expo-router";
-import * as storage from "@/lib/storage";
 
 // Define a Zod schema for the profile data
 const profileSchema = z.object({

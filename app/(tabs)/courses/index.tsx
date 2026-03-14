@@ -1,18 +1,17 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  Pressable,
-  ActivityIndicator,
-} from "react-native";
-import React, { useState, useEffect, use } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import AppCard from "@/components/app-card";
 import * as api from "@/lib/api";
 import { theme } from "@/styles/theme";
-import { set } from "zod";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 // const COURSES = [
 //     {id: "cprg216", title:"CPRG-216", subtitle:"Object Oreiented Programming"},
@@ -32,8 +31,7 @@ const CourseList = () => {
       setError(null); // make sure to clear errors from error state
       setLoading(true);
       const result = await api.getCourses();
-      setCourses(result)
-
+      setCourses(result);
     } catch (error) {
       setError(
         error instanceof Error
@@ -75,21 +73,20 @@ const CourseList = () => {
     );
   }
 
-  if(error){
+  if (error) {
     return (
       <View style={styles.centered}>
-        <Ionicons 
-        name="cloud-offline-outline"
-        size={48}
-        color={theme.color.mute}
+        <Ionicons
+          name="cloud-offline-outline"
+          size={48}
+          color={theme.color.mute}
         />
         <Text style={styles.errorText}>{error}</Text>
         <Pressable style={styles.retryButton} onPress={loadCourses}>
           <Text style={styles.retryText}>Try Again</Text>
         </Pressable>
-
       </View>
-    )
+    );
   }
 
   return (
@@ -139,33 +136,33 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: theme.color.bg,
-    padding: theme.spacing.screen
+    padding: theme.spacing.screen,
   },
-  errorText:{
+  errorText: {
     marginTop: 12,
     fontSize: 16,
     color: theme.color.mute,
-    textAlign:"center"
+    textAlign: "center",
   },
   retryButton: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: theme.radius.input,
-    backgroundColor: theme.color.primary
+    backgroundColor: theme.color.primary,
   },
-  retryText:{
-    color:"#ffffff",
+  retryText: {
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: "700"
+    fontWeight: "700",
   },
-  emptyText:{
-    textAlign:"center",
+  emptyText: {
+    textAlign: "center",
     color: theme.color.mute,
     marginTop: 40,
-    fontSize: 15
-  }
+    fontSize: 15,
+  },
 });

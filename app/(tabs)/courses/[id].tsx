@@ -1,18 +1,17 @@
+import AppCard from "@/components/app-card";
+import * as api from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
-  Pressable,
-  ActivityIndicator,
-  ScrollView,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { useState, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import AppCard from "@/components/app-card";
 import { theme } from "../../../styles/theme";
-import * as api from "@/lib/api";
-import React from "react";
 
 const CourseDetails = () => {
   const [course, setCourse] = useState<api.CourseDetail | null>(null);

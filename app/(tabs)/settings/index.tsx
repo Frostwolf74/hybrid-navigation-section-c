@@ -1,38 +1,47 @@
+import AppCard from "@/components/app-card";
+import * as storage from "@/lib/storage";
+import { theme } from "@/styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
   StyleSheet,
+  Switch,
   Text,
   View,
-  Switch,
-  Pressable,
-  ActivityIndicator,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import AppCard from "@/components/app-card";
-import { theme } from "@/styles/theme";
-import * as storage from "@/lib/storage";
 
 const Settings = () => {
   const [notification, setNotification] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load saved notification preference on mount
 
   useEffect(() => {
     // Define an async function to load the value since useEffect can't be async
-    const loadNotification = async () => {
+    const loadSettings = async () => {
       // Try to laod saved value from storage if it exists
-      const saved = await storage.get<boolean>(
+      const savedNotification = await storage.get<boolean>(
         storage.STORAGE_KEY.NOTIFICATIONS,
       );
-      if (saved !== null) {
+      const savedTheme = await storage.get<boolean>(storage.STORAGE_KEY.THEME);
+
+      if (savedNotification !== null) {
         // if we have a saved value, use it to set the state
-        setNotification(saved);
+        setNotification(savedNotification);
       }
+
+      if (savedTheme !== null) {
+        setDarkMode(savedTheme);
+      }
+
       setIsLoading(false); // turning off the spinner
     };
-    loadNotification();
+
+    loadSettings();
   }, []);
 
   const handleToggle = async (value: boolean) => {
@@ -40,12 +49,17 @@ const Settings = () => {
     await storage.set(storage.STORAGE_KEY.NOTIFICATIONS, value);
   };
 
-  if(isLoading){
+  const handleDarkModeToggle = async (value: boolean) => {
+    setDarkMode(value);
+    await storage.set(storage.STORAGE_KEY.THEME, value);
+  };
+
+  if (isLoading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={theme.color.primary} />
       </View>
-    )
+    );
   }
   return (
     <View style={styles.container}>
@@ -56,6 +70,12 @@ const Settings = () => {
         subtitle="Enable app notifications"
         right={<Switch value={notification} onValueChange={handleToggle} />}
       />
+      <AppCard
+        title="Dark Mode"
+        subtitle="Use dark theme"
+        right={<Switch value={darkMode} onValueChange={handleDarkModeToggle} />}
+      />
+      <Text style={styles.storageState}>Stored: {String(darkMode)}</Text>
       <Pressable onPress={() => router.push("/(tabs)/settings/profile")}>
         <AppCard
           title="Account"
@@ -86,5 +106,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginBottom: 12,
     color: theme.color.text,
+  },
+  storageState: {
+    marginTop: -4,
+    marginBottom: 12,
+    color: theme.color.mute,
+    fontSize: 13,
   },
 });

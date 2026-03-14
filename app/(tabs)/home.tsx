@@ -1,15 +1,15 @@
+import AppCard from "@/components/app-card";
+import * as api from "@/lib/api";
+import { theme } from "@/styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
-  Pressable,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import AppCard from "@/components/app-card";
-import { Ionicons } from "@expo/vector-icons";
-import { theme } from "@/styles/theme";
-import * as api from "@/lib/api";
 
 const home = () => {
   const [data, setData] = useState<api.DashboardData | null>(null);
@@ -37,29 +37,28 @@ const home = () => {
     loadDashboard();
   }, []);
 
-  if(isLoading){
+  if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={theme.color.primary}/>
+        <ActivityIndicator size="large" color={theme.color.primary} />
       </View>
-    )
+    );
   }
 
-  if(error){
+  if (error) {
     return (
       <View style={styles.centered}>
         <Ionicons
-        name="cloud-offline-outline"
-        size={48}
-        color={theme.color.mute}
+          name="cloud-offline-outline"
+          size={48}
+          color={theme.color.mute}
         />
         <Text style={styles.errorText}>{error}</Text>
         <Pressable style={styles.retryButton} onPress={loadDashboard}>
           <Text style={styles.retryText}>Try Again</Text>
         </Pressable>
-
       </View>
-    )
+    );
   }
 
   return (
@@ -105,8 +104,8 @@ const styles = StyleSheet.create({
   centered: {
     flex: 1,
     padding: theme.spacing.screen,
-    justifyContent:"center",
-    alignItems:"center"
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   h1: {
@@ -120,22 +119,22 @@ const styles = StyleSheet.create({
     color: theme.color.mute,
   },
 
-  errorText:{
+  errorText: {
     marginTop: 12,
     fontSize: 16,
     color: theme.color.mute,
-    textAlign:"center"
+    textAlign: "center",
   },
   retryButton: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: theme.radius.input,
-    backgroundColor: theme.color.primary
+    backgroundColor: theme.color.primary,
   },
   retryText: {
     color: "#ffffff",
-    fontSize:16,
-    fontWeight:"700"
-  }
+    fontSize: 16,
+    fontWeight: "700",
+  },
 });
